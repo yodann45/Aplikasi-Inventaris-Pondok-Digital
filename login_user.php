@@ -139,7 +139,7 @@ if(isset($_POST['login'])){
         <button class="btn btn-success w-100 mb-3" name="login">Login</button>
       </form>
       <a href="register.php" class="btn btn-outline-primary w-100 mb-2">Daftar akun baru</a>
-      <a href="index.php" class="btn btn-link w-100">← Kembali ke Dashboard Tamu</a>
+      <a href="index.php" class="btn btn-link w-100">Kembali ke Dashboard Utama</a>
     </div>
   </div>
 </div>

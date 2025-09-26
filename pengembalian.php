@@ -8,42 +8,44 @@ if(!isset($_SESSION['user_id'])){
 
 $user_id = (int)$_SESSION['user_id'];
 
-// handle pengembalian via POST (dari modal confirm)
+// handle pengembalian via POST
 if(isset($_POST['confirm_return'])){
     $peminjaman_id = (int)$_POST['peminjaman_id'];
-    $tgl_pengembalian = $_POST['tgl_pengembalian'];
+    $tgl = $_POST['tgl_pengembalian'];   // date (Y-m-d)
+    $jam = $_POST['jam_pengembalian'];   // time (H:i)
+
+    // gabungkan jadi timestamp string
+    $tgl_pengembalian = $tgl . " " . $jam . ":00";
 
     $sql = "INSERT INTO pengembalian (peminjaman_id, tgl_pengembalian, status) 
             VALUES ($peminjaman_id, '$tgl_pengembalian', 'pending')";
     mysqli_query($koneksi, $sql);
 
-    $msg = "Permintaan pengembalian dikirim. Tunggu verifikasi admin.";
+    $msg = "Permintaan pengembalian berhasil diajukan, menunggu persetujuan admin.";
 }
 
 // Pagination
-$limit = 6; // lebih kecil biar enak di grid
+$limit = 6;
 $page = isset($_GET['page']) ? max(1,(int)$_GET['page']) : 1;
 $offset = ($page-1)*$limit;
 
 $total_q = mysqli_query($koneksi, "
     SELECT COUNT(*) as total 
     FROM peminjaman p
-    LEFT JOIN pengembalian pg ON pg.peminjaman_id=p.id
-    WHERE p.user_id=$user_id 
-      AND p.status='diterima' 
-      AND pg.id IS NULL
+    WHERE p.user_id=$user_id AND p.status='diterima'
 ");
 $total = mysqli_fetch_assoc($total_q)['total'];
 $pages = ceil($total/$limit);
 
+// Ambil list peminjaman user (beserta status pengembalian jika ada)
 $list = mysqli_query($koneksi, "
-    SELECT p.id, p.jumlah, p.tanggal_pinjam, p.rencana_kembali, b.nama_barang 
+    SELECT p.id, p.jumlah, p.tanggal_pinjam, p.rencana_kembali, b.nama_barang,
+           pg.status as return_status, pg.tgl_pengembalian
     FROM peminjaman p
     JOIN barang b ON p.barang_id=b.id
     LEFT JOIN pengembalian pg ON pg.peminjaman_id=p.id
     WHERE p.user_id=$user_id 
-      AND p.status='diterima' 
-      AND pg.id IS NULL
+      AND p.status='diterima'
     ORDER BY p.id DESC
     LIMIT $limit OFFSET $offset
 ");
@@ -60,13 +62,8 @@ $list = mysqli_query($koneksi, "
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
       transition: transform 0.2s;
     }
-    .pinjam-card:hover {
-      transform: translateY(-5px);
-    }
-    .card-title {
-      font-weight: 600;
-      color: #198754;
-    }
+    .pinjam-card:hover { transform: translateY(-5px); }
+    .card-title { font-weight: 600; color: #198754; }
   </style>
 </head>
 <body class="bg-light">
@@ -88,9 +85,19 @@ $list = mysqli_query($koneksi, "
               <li><strong>Rencana Kembali:</strong> <?= $r['rencana_kembali']; ?></li>
             </ul>
             <div class="mt-auto">
-              <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#returnModal<?= $r['id']; ?>">
-                Ajukan Pengembalian
-              </button>
+              <?php if($r['return_status']): ?>
+                <?php if($r['return_status']=='pending'): ?>
+                  <span class="badge bg-warning w-100">Menunggu Persetujuan Admin</span>
+                <?php elseif($r['return_status']=='diterima'): ?>
+                  <span class="badge bg-success w-100">Pengembalian Diterima</span>
+                <?php elseif($r['return_status']=='ditolak'): ?>
+                  <span class="badge bg-danger w-100">Pengembalian Ditolak</span>
+                <?php endif; ?>
+              <?php else: ?>
+                <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#returnModal<?= $r['id']; ?>">
+                  Ajukan Pengembalian
+                </button>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -113,6 +120,10 @@ $list = mysqli_query($koneksi, "
                   <label class="form-label">Tanggal Pengembalian</label>
                   <input type="date" name="tgl_pengembalian" class="form-control" required>
                 </div>
+                <div class="mb-3">
+                  <label class="form-label">Jam Pengembalian</label>
+                  <input type="time" name="jam_pengembalian" class="form-control" required>
+                </div>
                 <input type="hidden" name="peminjaman_id" value="<?= $r['id']; ?>">
               </div>
               <div class="modal-footer">
@@ -132,7 +143,17 @@ $list = mysqli_query($koneksi, "
     <?php endif; ?>
   </div>
 
-
+  <!-- pagination -->
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      <?php for($p=1;$p<=$pages;$p++): ?>
+        <li class="page-item <?= $p==$page?'active':'' ?>">
+          <a class="page-link" href="?page=<?= $p ?>"><?= $p ?></a>
+        </li>
+      <?php endfor; ?>
+    </ul>
+  </nav>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -120,7 +120,7 @@ if(isset($_POST['login'])){
         </div>
         <button class="btn btn-success w-100 mb-3" name="login">Login</button>
       </form>
-      <a href="../index.php" class="btn btn-outline-secondary w-100">Kembali ke Dashboard Tamu</a>
+      <a href="../index.php" class="btn btn-outline-secondary w-100">Kembali ke Dashboard Utama</a>
     </div>
   </div>
 </div>

@@ -16,15 +16,17 @@ if(isset($_POST['pinjam'])){
     $tanggal_pinjam = $_POST['tanggal_pinjam'];
     $pickup_time = $_POST['pickup_time'];
     $rencana_kembali = $_POST['tgl_kembali'];
+    $alamat = mysqli_real_escape_string($koneksi, $_POST['alamat']); // alamat bisa diedit
     $keterangan = mysqli_real_escape_string($koneksi, $_POST['keterangan']);
 
+    // cek stok
     $cek = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT stok FROM barang WHERE id=$barang"));
     if($jumlah > $cek['stok']){
         $msg = "<div class='alert alert-danger'>Jumlah melebihi stok tersedia!</div>";
     } else {
         $sql = "INSERT INTO peminjaman 
-                (user_id, barang_id, jumlah, tanggal_pinjam, pickup_time, rencana_kembali, keterangan, status)
-                VALUES ($user_id, $barang, $jumlah, '$tanggal_pinjam', '$pickup_time', '$rencana_kembali', '$keterangan', 'pending')";
+                (user_id, barang_id, jumlah, tanggal_pinjam, pickup_time, rencana_kembali, alamat, keterangan, status)
+                VALUES ($user_id, $barang, $jumlah, '$tanggal_pinjam', '$pickup_time', '$rencana_kembali', '$alamat', '$keterangan', 'pending')";
         mysqli_query($koneksi, $sql);
 
         $msg = "<div class='alert alert-success'>Permintaan peminjaman berhasil dikirim! Tunggu persetujuan admin.</div>";
@@ -40,9 +42,7 @@ $barang_q = mysqli_query($koneksi, "SELECT * FROM barang WHERE status='aktif' AN
   <title>Form Peminjaman</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body {
-      background: #f8f9fa;
-    }
+    body { background: #f8f9fa; }
     .form-card {
       background: #fff;
       border-radius: 15px;
@@ -50,22 +50,14 @@ $barang_q = mysqli_query($koneksi, "SELECT * FROM barang WHERE status='aktif' AN
       padding: 2rem;
       margin-top: 2rem;
     }
-    h2 {
-      font-weight: bold;
-      color: #198754;
-    }
-    .form-control, .form-select {
-      border-radius: 10px;
-    }
+    h2 { font-weight: bold; color: #198754; }
+    .form-control, .form-select { border-radius: 10px; }
     .btn-success {
       border-radius: 30px;
       padding: 0.6rem 1.2rem;
       font-weight: 500;
     }
-    .modal-content {
-      border-radius: 15px;
-      overflow: hidden;
-    }
+    .modal-content { border-radius: 15px; overflow: hidden; }
   </style>
 </head>
 <body>
@@ -83,7 +75,7 @@ $barang_q = mysqli_query($koneksi, "SELECT * FROM barang WHERE status='aktif' AN
       </div>
       <div class="mb-3">
         <label class="form-label fw-semibold">Alamat</label>
-        <textarea class="form-control" disabled><?= htmlspecialchars($u['alamat'] ?? '') ?></textarea>
+        <textarea name="alamat" class="form-control" required><?= htmlspecialchars($u['alamat'] ?? '') ?></textarea>
       </div>
       <div class="mb-3">
         <label class="form-label fw-semibold">Nomor Telepon</label>
@@ -163,9 +155,7 @@ $barang_q = mysqli_query($koneksi, "SELECT * FROM barang WHERE status='aktif' AN
 document.getElementById('barangSelect').addEventListener('change', function(){
   const stok = this.options[this.selectedIndex].getAttribute('data-stok');
   const jumlahSelect = document.getElementById('jumlahSelect');
-
   jumlahSelect.innerHTML = '<option value="">--Pilih Jumlah--</option>';
-
   if(stok){
     for(let i=1; i<=stok; i++){
       let opt = document.createElement('option');

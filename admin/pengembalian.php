@@ -32,13 +32,7 @@ if(isset($_GET['terima'])){
     exit;
 }
 
-// Aksi tolak
-if(isset($_GET['tolak'])){
-    $id = (int) $_GET['tolak'];
-    mysqli_query($koneksi, "UPDATE pengembalian SET status='ditolak' WHERE id=$id");
-    header("Location: pengembalian.php?page=".(isset($_GET['page']) ? $_GET['page'] : 1));
-    exit;
-}
+
 
 // --- Pagination ---
 $limit = 10;
@@ -101,16 +95,15 @@ $pengembalian = mysqli_query($koneksi, "
           <td>
             <?php if($row['status']=='pending'){ ?>
               <span class="badge bg-warning">Menunggu</span>
-            <?php } elseif($row['status']=='diterima'){ ?>
+            <?php } if($row['status']=='diterima'){ ?>
               <span class="badge bg-success">Diterima</span>
             <?php } else { ?>
-              <span class="badge bg-danger">Ditolak</span>
+              
             <?php } ?>
           </td>
           <td>
             <?php if($row['status']=='pending'){ ?>
               <a href="pengembalian.php?terima=<?= $row['id']; ?>&page=<?= $page; ?>" class="btn btn-success btn-sm" onclick="return confirm('Terima pengembalian ini?')">Terima</a>
-              <a href="pengembalian.php?tolak=<?= $row['id']; ?>&page=<?= $page; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Tolak pengembalian ini?')">Tolak</a>
             <?php } else { echo "-"; } ?>
           </td>
         </tr>
